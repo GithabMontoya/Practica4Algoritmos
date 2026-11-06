@@ -21,6 +21,7 @@ public class Juego {
     private final Pila<Movimiento> historial = new Pila<>(5000);
     private ListaCircular<Movimiento> pistas = null;   // pistas del tablero actual (null = hay que calcularlas)
     private boolean hayPistas = false;
+    private int movimientos = 0;
 
     public Juego() {
         for (int i = 0; i < COLUMNAS; i++) columnas[i] = new Pila<>(60);
@@ -236,6 +237,11 @@ public class Juego {
     private void probar(Cola<Movimiento> posibles, Movimiento m) {
         if (esValido(m)) posibles.insertarDato(m);
     }
+
+    public int movimientos() {
+        return movimientos;
+    }
+
 
     public String describir(Movimiento m) {
         String cartas = (m.cantidad == 1) ? "la carta" : "las " + m.cantidad + " cartas";
