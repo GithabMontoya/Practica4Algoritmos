@@ -1,6 +1,5 @@
 package com.example.p4algoritmos.Vista;
 
-
 import com.example.p4algoritmos.Modelo.CartaInglesa;
 import com.example.p4algoritmos.Modelo.Juego;
 import com.example.p4algoritmos.Modelo.Movimiento;
@@ -35,7 +34,6 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-
 public class VistaJuego {
 
     public interface Escuchador {
@@ -45,7 +43,7 @@ public class VistaJuego {
         void alPulsarSalir();
     }
 
-    private static final String CARPETA = "cartas poker";   // <-- nombre de tu carpeta de imágenes
+    private static final String CARPETA = "cartas poker";
     private static final String[] EXTENSIONES = {".jpg"};
 
     private static final double ANCHO = 80;
@@ -62,7 +60,6 @@ public class VistaJuego {
     private final Label lblEstado = new Label();
     private final Label lblInfo = new Label();
 
-    // Lo que se está resaltando (lo manda el controlador en cada dibujo)
     private Pila<CartaInglesa> seleccionada;
     private int cantidadSeleccionada;
     private Movimiento pista;
@@ -149,7 +146,7 @@ public class VistaJuego {
             Pila<CartaInglesa> fundacion = juego.lugarFundacion(i);
             CartaInglesa cima = juego.cima(fundacion);
 
-            StackPane slot = espacioVacio(Palo.values()[i].getFigura());
+            StackPane slot = espacioVacio(simbolo(Palo.values()[i]));
             if (cima != null) slot.getChildren().add(dibujoCarta(cima));
             if (esDestinoDePista(fundacion)) slot.setEffect(brillo(Color.LIMEGREEN));
             slot.setOnMouseClicked(e -> escuchador.alPulsarLugar(fundacion, 0));
@@ -176,7 +173,7 @@ public class VistaJuego {
                 boolean estaSeleccionada = columna == seleccionada && pos >= n - cantidadSeleccionada;
                 boolean origen = esOrigenDePista(columna) && pos >= n - pista.cantidad;
                 boolean destino = esDestinoDePista(columna) && pos == n - 1;
-                boolean oscura = !juego.esMovible(columna, pos);   // las que no se pueden mover se ven más oscuras
+                boolean oscura = !juego.esMovible(columna, pos);
 
                 Node carta = conEfecto(dibujoCarta(juego.cartaEn(columna, pos)), estaSeleccionada, origen || destino, oscura);
                 carta.setLayoutY(pos * DESFASE);
@@ -197,8 +194,6 @@ public class VistaJuego {
     private boolean esDestinoDePista(Pila<CartaInglesa> lugar) {
         return pista != null && pista.destino == lugar;
     }
-
-    // efectos
 
     private Node conEfecto(Node carta, boolean estaSeleccionada, boolean enPista, boolean oscura) {
         if (estaSeleccionada) {
@@ -247,12 +242,11 @@ public class VistaJuego {
             vista.setFitHeight(ALTO);
             return vista;
         }
-        // Si no hay imagen, se dibuja la carta con texto
         Rectangle fondo = new Rectangle(ANCHO, ALTO, Color.WHITE);
         fondo.setArcWidth(10);
         fondo.setArcHeight(10);
         fondo.setStroke(Color.BLACK);
-        Text texto = new Text(nombreValor(carta.getValorBajo()) + "\n" + carta.getPalo().getFigura());
+        Text texto = new Text(nombreValor(carta.getValorBajo()) + "\n" + simbolo(carta.getPalo()));
         texto.setFont(Font.font("Arial", FontWeight.BOLD, 22));
         texto.setFill(carta.getColor().equals("rojo") ? Color.RED : Color.BLACK);
 
@@ -260,6 +254,10 @@ public class VistaJuego {
         dibujo.setMinSize(ANCHO, ALTO);
         dibujo.setMaxSize(ANCHO, ALTO);
         return dibujo;
+    }
+
+    private String simbolo(Palo palo) {
+        return palo.getFigura().replace("\uFE0E", "").replace("\uFE0F", "");
     }
 
     private String nombreValor(int valor) {
@@ -284,7 +282,7 @@ public class VistaJuego {
     private Image imagenDe(CartaInglesa carta) {
         String nombre = "CARTA " + carta.getValorBajo() + " " + nombrePalo(carta.getPalo());
         if (!imagenes.containsKey(nombre)) {
-            imagenes.put(nombre, cargarImagen(nombre));   // se guarda aunque sea null para no buscarla otra vez
+            imagenes.put(nombre, cargarImagen(nombre));
         }
         return imagenes.get(nombre);
     }

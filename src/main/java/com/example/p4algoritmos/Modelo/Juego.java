@@ -2,14 +2,6 @@ package com.example.p4algoritmos.Modelo;
 
 import java.util.Arrays;
 
-/**
- * todo es una Pila de cartas, que están ordenadas en distintos lugares
- *  - 8 columnas    (las de abajo)
- *  - 8 celdas      (las de arriba, cada una guarda 1 carta)
- *  - 4 fundaciones (una por palo, de A a K, en el orden del enum Palo)
- *
- * Un movimiento siempre es lo mismo: pasar N cartas de un lugar a otro.
- */
 public class Juego {
     public static final int COLUMNAS = 8;
     public static final int CELDAS = 8;
@@ -19,7 +11,7 @@ public class Juego {
     private final Pila<CartaInglesa>[] celdas = new Pila[CELDAS];
     private final Pila<CartaInglesa>[] fundaciones = new Pila[FUNDACIONES];
     private final Pila<Movimiento> historial = new Pila<>(5000);
-    private ListaCircular<Movimiento> pistas = null;   // pistas del tablero actual (null = hay que calcularlas)
+    private ListaCircular<Movimiento> pistas = null;
     private boolean hayPistas = false;
     private int movimientos = 0;
 
@@ -27,7 +19,9 @@ public class Juego {
         for (int i = 0; i < COLUMNAS; i++) columnas[i] = new Pila<>(60);
         for (int i = 0; i < CELDAS; i++) celdas[i] = new Pila<>(1);
         for (int i = 0; i < FUNDACIONES; i++) fundaciones[i] = new Pila<>(20);
+        repartir();
     }
+
     private void repartir() {
         Mazo mazo = new Mazo();
         for (int i = 0; i < 4; i++) {
@@ -45,8 +39,6 @@ public class Juego {
         carta.makeFaceUp();
         return carta;
     }
-
-    // PARA LA VISTA
 
     public Pila<CartaInglesa> lugarColumna(int i) {
         return columnas[i];
@@ -81,42 +73,40 @@ public class Juego {
         return libres;
     }
 
-    // Cuántas cartas se pueden mover juntas, celdas libres + 1.
     public int maxMovibles() {
         return celdasLibres() + 1;
     }
 
+    public int movimientos() {
+        return movimientos;
+    }
+
     public boolean gano() {
         for (Pila<CartaInglesa> fundacion : fundaciones) {
-            if (fundacion.tope != 12) return false;   // 13 cartas = índice 12
+            if (fundacion.tope != 12) return false;
         }
         return true;
     }
-
-    // REGLAS
 
     private boolean esColumna(Pila<CartaInglesa> lugar) {
         return Arrays.asList(columnas).contains(lugar);
     }
 
-
     private boolean esFundacion(Pila<CartaInglesa> lugar) {
         return Arrays.asList(fundaciones).contains(lugar);
     }
 
-    // La carta de abajo puede ir debajo de la de arriba, mismo palo y un valor menos
     private boolean encadenan(CartaInglesa arriba, CartaInglesa abajo) {
         return arriba.getPalo() == abajo.getPalo()
                 && arriba.getValorBajo() == abajo.getValorBajo() + 1;
     }
 
-    // Cuántas cartas del final de un lugar se pueden mover juntas.
     public int cuantasSeMueven(Pila<CartaInglesa> lugar) {
         if (esFundacion(lugar)) return 0;
         int n = cantidadEn(lugar);
         if (n == 0) return 0;
 
-        int enOrden = 1;   // cartas seguidas del mismo palo, bajando de uno en uno
+        int enOrden = 1;
         while (enOrden < n && encadenan(cartaEn(lugar, n - enOrden - 1), cartaEn(lugar, n - enOrden))) {
             enOrden++;
         }
@@ -129,7 +119,10 @@ public class Juego {
     }
 
     private boolean cabeEnColumna(CartaInglesa carta, Pila<CartaInglesa> columna) {
-        return columna.pilaVacia() || encadenan(columna.peek(), carta);
+        if (columna.pilaVacia()) {
+            return carta.getValorBajo() == 13;
+        }
+        return encadenan(columna.peek(), carta);
     }
 
     private boolean cabeEnFundacion(CartaInglesa carta) {
@@ -151,23 +144,32 @@ public class Juego {
                     && m.destino == fundaciones[carta.getPalo().ordinal()]
                     && cabeEnFundacion(carta);
         }
-        // Si no es columna ni fundación, es una celda
         return m.cantidad == 1 && m.destino.pilaVacia();
     }
 
-    // Hace el movimiento si es válido y lo guarda en el historial
     public boolean mover(Movimiento m) {
+        m = corregirFundacion(m);
         if (!esValido(m)) return false;
         pasarCartas(m.origen, m.destino, m.cantidad);
         historial.push(m);
+        movimientos++;
+        pistas = null;
         return true;
     }
 
-    // Deshace el último movimiento
+    private Movimiento corregirFundacion(Movimiento m) {
+        if (esFundacion(m.destino) && m.cantidad == 1 && cuantasSeMueven(m.origen) >= 1) {
+            CartaInglesa carta = cima(m.origen);
+            return new Movimiento(m.origen, 1, fundaciones[carta.getPalo().ordinal()]);
+        }
+        return m;
+    }
+
     public boolean undo() {
         if (historial.pilaVacia()) return false;
         Movimiento m = historial.pop();
         pasarCartas(m.destino, m.origen, m.cantidad);
+        pistas = null;
         return true;
     }
 
@@ -181,9 +183,6 @@ public class Juego {
         }
     }
 
-    // PISTAS
-
-    // Devuelve un movimiento posible, cada llamada seguida da uno distinto. Null si no hay ninguno
     public Movimiento siguientePista() {
         if (pistas == null) calcularPistas();
         if (!hayPistas) return null;
@@ -193,16 +192,17 @@ public class Juego {
         return pista;
     }
 
-    // Junta todos los movimientos posibles en una Cola y los pasa a una ListaCircular
     private void calcularPistas() {
         Cola<Movimiento> posibles = new Cola<>(1000);
 
         for (Pila<CartaInglesa> celda : celdas) {
             agregarDesde(posibles, celda);
         }
+
         for (Pila<CartaInglesa> columna : columnas) {
             agregarDesde(posibles, columna);
         }
+
         for (Pila<CartaInglesa> celda : celdas) {
             if (celda.pilaVacia()) {
                 for (Pila<CartaInglesa> columna : columnas) {
@@ -225,8 +225,8 @@ public class Juego {
             for (Pila<CartaInglesa> fundacion : fundaciones) {
                 probar(posibles, new Movimiento(origen, cant, fundacion));
             }
+
             for (Pila<CartaInglesa> columna : columnas) {
-                // Mover una columna completa a una columna vacía no sirve de nada
                 boolean columnaCompleta = esColumna(origen) && cant == cantidadEn(origen);
                 if (columnaCompleta && columna.pilaVacia()) continue;
                 probar(posibles, new Movimiento(origen, cant, columna));
@@ -237,11 +237,6 @@ public class Juego {
     private void probar(Cola<Movimiento> posibles, Movimiento m) {
         if (esValido(m)) posibles.insertarDato(m);
     }
-
-    public int movimientos() {
-        return movimientos;
-    }
-
 
     public String describir(Movimiento m) {
         String cartas = (m.cantidad == 1) ? "la carta" : "las " + m.cantidad + " cartas";
