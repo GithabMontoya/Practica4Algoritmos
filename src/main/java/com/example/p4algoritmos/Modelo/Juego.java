@@ -18,6 +18,7 @@ public class Juego {
     private final Pila<CartaInglesa>[] columnas = new Pila[COLUMNAS];
     private final Pila<CartaInglesa>[] celdas = new Pila[CELDAS];
     private final Pila<CartaInglesa>[] fundaciones = new Pila[FUNDACIONES];
+    private final Pila<Movimiento> historial = new Pila<>(5000);
 
     public Juego() {
         for (int i = 0; i < COLUMNAS; i++) columnas[i] = new Pila<>(60);
@@ -143,4 +144,24 @@ public class Juego {
         // Si no es columna ni fundación, es una celda
         return m.cantidad == 1 && m.destino.pilaVacia();
     }
+
+    // Hace el movimiento si es válido y lo guarda en el historial
+    public boolean mover(Movimiento m) {
+        if (!esValido(m)) return false;
+        pasarCartas(m.origen, m.destino, m.cantidad);
+        historial.push(m);
+        return true;
+    }
+
+    private void pasarCartas(Pila<CartaInglesa> origen, Pila<CartaInglesa> destino, int cantidad) {
+        CartaInglesa[] grupo = new CartaInglesa[cantidad];
+        for (int i = cantidad - 1; i >= 0; i--) {
+            grupo[i] = origen.pop();
+        }
+        for (CartaInglesa carta : grupo) {
+            destino.push(carta);
+        }
+    }
+
+
 }
