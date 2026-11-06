@@ -86,6 +86,9 @@ public class ControladorEightOff implements VistaJuego.Escuchador {
                 if (juego.gano()) {
                     vista.mostrarVictoria();
                     mostrarMenu();
+                } else if (juego.sinMovimientos()) {
+                    vista.mostrarSinMovimientos();
+                    mostrarMenu();
                 }
                 return;
             }

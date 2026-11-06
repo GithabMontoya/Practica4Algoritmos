@@ -107,6 +107,12 @@ public class VistaJuego {
         alerta.showAndWait();
     }
 
+    public void mostrarSinMovimientos() {
+        Alert alerta = new Alert(Alert.AlertType.INFORMATION, "Ya no quedan movimientos posibles");
+        alerta.setHeaderText("Fin del juego");
+        alerta.showAndWait();
+    }
+
     public void dibujar(Juego juego, Pila<CartaInglesa> seleccionada, int cantidadSeleccionada,
                         Movimiento pista, String mensaje) {
         this.seleccionada = seleccionada;

@@ -1,6 +1,5 @@
 package com.example.p4algoritmos.Modelo;
 
-
 /**
  * Write a description of class Carta here.
  *
@@ -95,5 +94,12 @@ public abstract class Carta implements Comparable<Carta> {
     public int getValorBajo() {
         return valorBajo;
     }
-}
 
+    @Override
+    public int compareTo(Carta otra) {
+        if (valor != otra.valor) {
+            return valor - otra.valor;
+        }
+        return palo.getPeso() - otra.palo.getPeso();
+    }
+}

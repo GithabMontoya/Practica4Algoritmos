@@ -11,9 +11,9 @@ public class Juego {
     private final Pila<CartaInglesa>[] celdas = new Pila[CELDAS];
     private final Pila<CartaInglesa>[] fundaciones = new Pila[FUNDACIONES];
     private final Pila<Movimiento> historial = new Pila<>(5000);
-    private ListaCircular<Movimiento> pistas = null;
+    private ListaSimple<Movimiento> pistas = null;
     private boolean hayPistas = false;
-    private int movimientos = 0;
+    private int movimientos = 0;   // contador de movimientos hechos (el Undo no lo resta)
 
     public Juego() {
         for (int i = 0; i < COLUMNAS; i++) columnas[i] = new Pila<>(60);
@@ -83,7 +83,7 @@ public class Juego {
 
     public boolean gano() {
         for (Pila<CartaInglesa> fundacion : fundaciones) {
-            if (fundacion.tope != 12) return false;
+            if (fundacion.tope != 12) return false;   // 13 cartas = índice 12
         }
         return true;
     }
@@ -102,11 +102,11 @@ public class Juego {
     }
 
     public int cuantasSeMueven(Pila<CartaInglesa> lugar) {
-        if (esFundacion(lugar)) return 0;
+        if (esFundacion(lugar)) return 0;   // de las fundaciones no se saca nada
         int n = cantidadEn(lugar);
         if (n == 0) return 0;
 
-        int enOrden = 1;
+        int enOrden = 1;   // cartas seguidas del mismo palo, bajando de uno en uno
         while (enOrden < n && encadenan(cartaEn(lugar, n - enOrden - 1), cartaEn(lugar, n - enOrden))) {
             enOrden++;
         }
@@ -120,7 +120,7 @@ public class Juego {
 
     private boolean cabeEnColumna(CartaInglesa carta, Pila<CartaInglesa> columna) {
         if (columna.pilaVacia()) {
-            return carta.getValorBajo() == 13;
+            return carta.getValorBajo() == 13;   // 13 = K
         }
         return encadenan(columna.peek(), carta);
     }
@@ -192,17 +192,20 @@ public class Juego {
         return pista;
     }
 
+    public boolean sinMovimientos() {
+        if (pistas == null) calcularPistas();
+        return !hayPistas;
+    }
+
     private void calcularPistas() {
         Cola<Movimiento> posibles = new Cola<>(1000);
 
         for (Pila<CartaInglesa> celda : celdas) {
             agregarDesde(posibles, celda);
         }
-
         for (Pila<CartaInglesa> columna : columnas) {
             agregarDesde(posibles, columna);
         }
-
         for (Pila<CartaInglesa> celda : celdas) {
             if (celda.pilaVacia()) {
                 for (Pila<CartaInglesa> columna : columnas) {
@@ -212,7 +215,7 @@ public class Juego {
             }
         }
 
-        pistas = new ListaCircular<>();
+        pistas = new ListaSimple<>();
         hayPistas = false;
         while (posibles.inicio != 0) {
             pistas.insertaFinal(posibles.eliminarDato());
@@ -225,7 +228,6 @@ public class Juego {
             for (Pila<CartaInglesa> fundacion : fundaciones) {
                 probar(posibles, new Movimiento(origen, cant, fundacion));
             }
-
             for (Pila<CartaInglesa> columna : columnas) {
                 boolean columnaCompleta = esColumna(origen) && cant == cantidadEn(origen);
                 if (columnaCompleta && columna.pilaVacia()) continue;

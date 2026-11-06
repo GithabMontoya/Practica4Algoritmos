@@ -1,55 +1,55 @@
 package com.example.p4algoritmos.Modelo;
-
 /**
  * Write a description of class Mazo here.
  *
  * @author (Cecilia Curlango Rosas)
  * @version (2025-2)
  */
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Random;
 
 public class Mazo {
-    private ArrayList<CartaInglesa> cartas = new ArrayList<>();
+    private ListaCircularDoble<CartaInglesa> cartas = new ListaCircularDoble<>();
 
     public Mazo() {
-        llenar(); // crea todas las cartas, excluyendo Jokers
+        llenar();
         mezclar();
     }
 
-    /**
-     * Obtiene todas las cartas del mazo.
-     * @return
-     */
-    public ArrayList<CartaInglesa> getCartas() {
+    public ListaCircularDoble<CartaInglesa> getCartas() {
         return cartas;
     }
 
     public CartaInglesa obtenerUnaCarta() {
-        if (cartas.size() > 0) {
-            return cartas.remove(0);
+        if (cartas.getInicio() == null) {
+            return null;
         }
-        return null;
+        return cartas.eliminaInicio();
     }
+
     private void mezclar() {
-        Collections.shuffle(cartas);
+        Random azar = new Random();
+        ListaCircularDoble<CartaInglesa> mezcladas = new ListaCircularDoble<>();
+        while (cartas.getInicio() != null) {
+            int posicion = azar.nextInt(cartas.contarNodos());
+            mezcladas.insertaFinal(cartas.eliminaPosicion(posicion));
+        }
+        cartas = mezcladas;
     }
 
     private void llenar() {
-        for (int i = 2; i <=14 ; i++) {
+        for (int i = 2; i <= 14; i++) {
             for (Palo palo : Palo.values()) {
-                CartaInglesa c = new CartaInglesa(i,palo, palo.getColor());
-                cartas.add(c);
+                cartas.insertaFinal(new CartaInglesa(i, palo, palo.getColor()));
             }
         }
     }
 
     public void ordenar() {
-        Collections.sort(cartas);
+        cartas.ordenarLista();
     }
 
     @Override
     public String toString() {
-        return cartas.toString();
+        return cartas.recorre();
     }
 }
