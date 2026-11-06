@@ -153,6 +153,14 @@ public class Juego {
         return true;
     }
 
+    // Deshace el último movimiento
+    public boolean undo() {
+        if (historial.pilaVacia()) return false;
+        Movimiento m = historial.pop();
+        pasarCartas(m.destino, m.origen, m.cantidad);
+        return true;
+    }
+
     private void pasarCartas(Pila<CartaInglesa> origen, Pila<CartaInglesa> destino, int cantidad) {
         CartaInglesa[] grupo = new CartaInglesa[cantidad];
         for (int i = cantidad - 1; i >= 0; i--) {
