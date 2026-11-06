@@ -84,6 +84,11 @@ public class Juego {
 
     // REGLAS
 
+    private boolean esColumna(Pila<CartaInglesa> lugar) {
+        return Arrays.asList(columnas).contains(lugar);
+    }
+
+
     private boolean esFundacion(Pila<CartaInglesa> lugar) {
         return Arrays.asList(fundaciones).contains(lugar);
     }
@@ -110,5 +115,32 @@ public class Juego {
     public boolean esMovible(Pila<CartaInglesa> lugar, int pos) {
         int n = cantidadEn(lugar);
         return pos >= 0 && pos < n && (n - pos) <= cuantasSeMueven(lugar);
+    }
+
+    private boolean cabeEnColumna(CartaInglesa carta, Pila<CartaInglesa> columna) {
+        return columna.pilaVacia() || encadenan(columna.peek(), carta);
+    }
+
+    private boolean cabeEnFundacion(CartaInglesa carta) {
+        Pila<CartaInglesa> fundacion = fundaciones[carta.getPalo().ordinal()];
+        int siguiente = fundacion.pilaVacia() ? 1 : fundacion.peek().getValorBajo() + 1;
+        return carta.getValorBajo() == siguiente;
+    }
+
+    public boolean esValido(Movimiento m) {
+        if (m.cantidad < 1 || m.cantidad > cuantasSeMueven(m.origen)) return false;
+        CartaInglesa carta = cartaEn(m.origen, cantidadEn(m.origen) - m.cantidad);
+
+        if (m.origen == m.destino) return false;
+        if (esColumna(m.destino)) {
+            return cabeEnColumna(carta, m.destino);
+        }
+        if (esFundacion(m.destino)) {
+            return m.cantidad == 1
+                    && m.destino == fundaciones[carta.getPalo().ordinal()]
+                    && cabeEnFundacion(carta);
+        }
+        // Si no es columna ni fundación, es una celda
+        return m.cantidad == 1 && m.destino.pilaVacia();
     }
 }
