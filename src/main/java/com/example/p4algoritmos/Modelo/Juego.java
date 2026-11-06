@@ -83,6 +83,13 @@ public class Juego {
         return celdasLibres() + 1;
     }
 
+    public boolean gano() {
+        for (Pila<CartaInglesa> fundacion : fundaciones) {
+            if (fundacion.tope != 12) return false;   // 13 cartas = índice 12
+        }
+        return true;
+    }
+
     // REGLAS
 
     private boolean esColumna(Pila<CartaInglesa> lugar) {
