@@ -19,6 +19,8 @@ public class Juego {
     private final Pila<CartaInglesa>[] celdas = new Pila[CELDAS];
     private final Pila<CartaInglesa>[] fundaciones = new Pila[FUNDACIONES];
     private final Pila<Movimiento> historial = new Pila<>(5000);
+    private ListaCircular<Movimiento> pistas = null;   // pistas del tablero actual (null = hay que calcularlas)
+    private boolean hayPistas = false;
 
     public Juego() {
         for (int i = 0; i < COLUMNAS; i++) columnas[i] = new Pila<>(60);
@@ -178,5 +180,75 @@ public class Juego {
         }
     }
 
+    // PISTAS
 
+    // Devuelve un movimiento posible, cada llamada seguida da uno distinto. Null si no hay ninguno
+    public Movimiento siguientePista() {
+        if (pistas == null) calcularPistas();
+        if (!hayPistas) return null;
+
+        Movimiento pista = pistas.eliminaInicio();
+        pistas.insertaFinal(pista);
+        return pista;
+    }
+
+    // Junta todos los movimientos posibles en una Cola y los pasa a una ListaCircular
+    private void calcularPistas() {
+        Cola<Movimiento> posibles = new Cola<>(1000);
+
+        for (Pila<CartaInglesa> celda : celdas) {
+            agregarDesde(posibles, celda);
+        }
+        for (Pila<CartaInglesa> columna : columnas) {
+            agregarDesde(posibles, columna);
+        }
+        for (Pila<CartaInglesa> celda : celdas) {
+            if (celda.pilaVacia()) {
+                for (Pila<CartaInglesa> columna : columnas) {
+                    probar(posibles, new Movimiento(columna, 1, celda));
+                }
+                break;
+            }
+        }
+
+        pistas = new ListaCircular<>();
+        hayPistas = false;
+        while (posibles.inicio != 0) {
+            pistas.insertaFinal(posibles.eliminarDato());
+            hayPistas = true;
+        }
+    }
+
+    private void agregarDesde(Cola<Movimiento> posibles, Pila<CartaInglesa> origen) {
+        for (int cant = cuantasSeMueven(origen); cant >= 1; cant--) {
+            for (Pila<CartaInglesa> fundacion : fundaciones) {
+                probar(posibles, new Movimiento(origen, cant, fundacion));
+            }
+            for (Pila<CartaInglesa> columna : columnas) {
+                // Mover una columna completa a una columna vacía no sirve de nada
+                boolean columnaCompleta = esColumna(origen) && cant == cantidadEn(origen);
+                if (columnaCompleta && columna.pilaVacia()) continue;
+                probar(posibles, new Movimiento(origen, cant, columna));
+            }
+        }
+    }
+
+    private void probar(Cola<Movimiento> posibles, Movimiento m) {
+        if (esValido(m)) posibles.insertarDato(m);
+    }
+
+    public String describir(Movimiento m) {
+        String cartas = (m.cantidad == 1) ? "la carta" : "las " + m.cantidad + " cartas";
+        return "Mueve " + cartas + " de " + nombre(m.origen) + " a " + nombre(m.destino) + ".";
+    }
+
+    private String nombre(Pila<CartaInglesa> lugar) {
+        for (int i = 0; i < COLUMNAS; i++) {
+            if (columnas[i] == lugar) return "la columna " + (i + 1);
+        }
+        for (int i = 0; i < CELDAS; i++) {
+            if (celdas[i] == lugar) return "la celda " + (i + 1);
+        }
+        return "su fundación";
+    }
 }
