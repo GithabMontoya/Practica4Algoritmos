@@ -1,5 +1,7 @@
 package com.example.p4algoritmos.Modelo;
 
+import java.util.Arrays;
+
 /**
  * todo es una Pila de cartas, que están ordenadas en distintos lugares
  *  - 8 columnas    (las de abajo)
@@ -65,5 +67,48 @@ public class Juego {
 
     public CartaInglesa cima(Pila<CartaInglesa> lugar) {
         return lugar.pilaVacia() ? null : lugar.peek();
+    }
+
+    public int celdasLibres() {
+        int libres = 0;
+        for (Pila<CartaInglesa> celda : celdas) {
+            if (celda.pilaVacia()) libres++;
+        }
+        return libres;
+    }
+
+    // Cuántas cartas se pueden mover juntas, celdas libres + 1.
+    public int maxMovibles() {
+        return celdasLibres() + 1;
+    }
+
+    // REGLAS
+
+    private boolean esFundacion(Pila<CartaInglesa> lugar) {
+        return Arrays.asList(fundaciones).contains(lugar);
+    }
+
+    // La carta de abajo puede ir debajo de la de arriba, mismo palo y un valor menos
+    private boolean encadenan(CartaInglesa arriba, CartaInglesa abajo) {
+        return arriba.getPalo() == abajo.getPalo()
+                && arriba.getValorBajo() == abajo.getValorBajo() + 1;
+    }
+
+    // Cuántas cartas del final de un lugar se pueden mover juntas.
+    public int cuantasSeMueven(Pila<CartaInglesa> lugar) {
+        if (esFundacion(lugar)) return 0;
+        int n = cantidadEn(lugar);
+        if (n == 0) return 0;
+
+        int enOrden = 1;   // cartas seguidas del mismo palo, bajando de uno en uno
+        while (enOrden < n && encadenan(cartaEn(lugar, n - enOrden - 1), cartaEn(lugar, n - enOrden))) {
+            enOrden++;
+        }
+        return Math.min(enOrden, maxMovibles());
+    }
+
+    public boolean esMovible(Pila<CartaInglesa> lugar, int pos) {
+        int n = cantidadEn(lugar);
+        return pos >= 0 && pos < n && (n - pos) <= cuantasSeMueven(lugar);
     }
 }
